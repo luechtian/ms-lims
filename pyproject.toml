@@ -1,0 +1,43 @@
+[project]
+name = "ms-lims"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "django>=6.0.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-django>=4.12.0",
+    "ruff>=0.15.10",
+]
+
+# ── pytest Konfiguration ──────────────────────────────
+[tool.pytest.ini_options]
+# Django-Settings für Tests (ab Phase 2 relevant)
+# DJANGO_SETTINGS_MODULE = "config.settings"
+# Wo pytest nach Tests sucht
+testpaths = ["tests"]
+# Ausgabe-Format: verbose
+addopts = "-v"
+
+# ── ruff Konfiguration ───────────────────────────────
+[tool.ruff]
+# Maximale Zeilenlänge
+line-length = 88
+# Python-Version für Syntax-Checks
+target-version = "py312"
+
+[tool.ruff.lint]
+# Aktivierte Regel-Sets
+select = [
+    "E",    # pycodestyle errors (Stil-Fehler)
+    "F",    # pyflakes (logische Fehler, z.B. unbenutzte Imports)
+    "I",    # isort (Import-Sortierung)
+    "UP",   # pyupgrade (modernere Syntax vorschlagen)
+    "B",    # bugbear (häufige Bugs)
+    "SIM",  # simplify (vereinfachbare Konstrukte)
+]

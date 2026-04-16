@@ -1,0 +1,53 @@
+# ── Python ───────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+wheels/
+.Python
+
+# ── Test & Linting Caches ────────────────────────────
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.tox/
+
+# ── Coverage ─────────────────────────────────────────
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+*.cover
+
+# ── Virtual Environment (wird von uv verwaltet) ─────
+.venv/
+
+# ── IDE ──────────────────────────────────────────────
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*.code-workspace
+
+# ── OS ───────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Secrets & lokale Konfiguration ───────────────────
+.env
+.env.*
+!.env.example
+local_settings.py
+
+# ── Django (ab Phase 2) ──────────────────────────────
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+*.log
