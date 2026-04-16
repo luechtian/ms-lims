@@ -1,9 +1,11 @@
 # MS-LIMS — Tech Stack & Architektur-Referenz
 
-> **Zweck dieses Dokuments:** Referenz für alle Technologie-Entscheidungen, Design Patterns und Architektur-Prinzipien des geplanten lightweight LIMS für die MS-Facility. Wird fortlaufend aktualisiert, sobald Requirements konkreter werden.
+> **Zweck dieses Dokuments:** Begründeter Tech-Hintergrund und Ideenspeicher. Erklärt *warum* bestimmte Technologien und Patterns gewählt wurden.
+>
+> **Verbindliche Prinzipien stehen in `.specify/memory/constitution.md`** (Tech-Stack, Modularitäts-Regeln, Design Patterns). Bei Konflikt gewinnt die Constitution.
 >
 > **Stand:** April 2026
-> **Letzte Änderung:** Versionen fixiert, SQLite als Primär-DB, Extraction Pillar überarbeitet
+> **Letzte Änderung:** App-Struktur angepasst (parties/projects/samples getrennt) nach Party-Hierarchie-Entscheidung
 
 ---
 
@@ -282,19 +284,29 @@ Die Frontend-Strategie folgt dem **Islands Architecture**-Prinzip: Die Basis ist
 
 ### 4.2 Django App-Struktur
 
+Finale App-Liste gemäß Constitution §"Modularität":
+
 ```
 ms-lims/
 ├── config/              # Django Settings, Root-URLs, WSGI
-├── core/                # Shared: User-Erweiterungen, Audit-Log, Container-Model
-├── samples/             # Säule 1: Sample CRUD, Storage, Lifecycle
-├── extractions/         # Säule 2: Batch, Layout, Probenlisten, Protokolle
-├── analyses/            # Säule 3: MS-Run, Results, QC-Bewertung
+├── parties/             # Institution, ResearchGroup, Person
+├── projects/            # Project, SampleIntake
+├── samples/             # OriginalSample, Extract (+ Derivate via parent_extract)
+├── storage/             # Freezer, Drawer, Rack, Position
+├── extractions/         # ExtractionProtocol, ExtractionBatch, MasterMix
+├── analyses/            # MeasurementRun, AnalysisResult
+├── instruments/         # Instrument, Adapter (Hamilton, MS — vorbereitet)
+├── lipidquant/          # Eigenständiges Python-Package (Django-frei, pip install -e .)
 ├── templates/           # Projekt-weite Templates (base.html, print-layouts)
 ├── static/              # CSS, JS, Icons
 ├── tests/               # Zentrale Test-Suite
 ├── db.sqlite3           # Die Datenbank (ein File!)
 └── manage.py
 ```
+
+**Apps-Kommunikations-Regel:** Apps importieren ausschließlich über `{app}/api.py` oder `{app}/services.py` — niemals direkt aus `models.py` oder `views.py` fremder Apps. Details in der Constitution.
+
+**Warum keine `core`-App?** Sollte die Notwendigkeit entstehen (geteilte Abstract-Models, User-Erweiterungen, projekt-weiter Audit-Log), wird sie ergänzt. Aktuell YAGNI — jede der obigen Apps regelt ihre Belange selbst. django-fsm-log deckt Audit-Log modell-übergreifend ab.
 
 ---
 

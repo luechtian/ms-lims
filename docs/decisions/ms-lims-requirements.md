@@ -1,9 +1,12 @@
 # MS-LIMS — Requirements-Dokument
 
-> **Zweck:** Konsolidierte Anforderungen für das MS-LIMS basierend auf den Workflow-Gesprächen. Dient als Grundlage für die Implementierung. Wird fortlaufend verfeinert.
+> **Zweck:** Konsolidierte fachliche Anforderungen für das MS-LIMS — das Domänenmodell aus Sicht der Nutzer. Dient als Grundlage für die Spezifikation einzelner Features. Wird fortlaufend verfeinert.
 >
-> **Stand:** April 2026
-> **Ergänzendes Dokument:** Tech Stack & Architektur-Referenz (ms-lims-tech-stack-referenz-v2.md)
+> **Stand:** April 2026 (aktualisiert nach Einführung der Projekt-Constitution)
+> **Verbindliche Prinzipien:** `.specify/memory/constitution.md` (Tech-Stack, Modularitäts-Regeln, Design Patterns)
+> **Tech-Hintergrund:** `docs/decisions/ms-lims-tech-stack-referenz-v2.md` (Entscheidungsbegründungen, Ideenspeicher)
+>
+> Dieses Dokument beschreibt *was* das LIMS können muss (fachlich). *Wie* es implementiert wird, steht in der Constitution und in den einzelnen Specs unter `specs/`.
 
 ---
 
@@ -11,7 +14,7 @@
 
 ### 1.1 Was ist das MS-LIMS?
 
-Ein leichtgewichtiges, web-basiertes Laboratory Information Management System für Massenspektrometrie-Labore. Es bildet den vollständigen Weg einer Probe ab — von der Kollaborationsvereinbarung über Probeneingang, Lagerung, Extraktion, Messung bis zur Quantifizierung.
+Ein leichtgewichtiges, web-basiertes Laboratory Information Management System für Massenspektrometrie-Labore. Es bildet den vollständigen Weg einer Probe ab — von der Projektvereinbarung über Probeneingang, Lagerung, Extraktion, Messung bis zur Quantifizierung.
 
 ### 1.2 Design-Prinzipien
 
@@ -26,7 +29,7 @@ Ein leichtgewichtiges, web-basiertes Laboratory Information Management System f�
 ### 1.3 Nutzerkontext
 
 - **Primäre Nutzer:** 1–2 Laboranten (Probeneingang, Extraktion, Messung)
-- **Sekundäre Nutzer:** Laborleiterin (Überblick, Kollaborations-Management)
+- **Sekundäre Nutzer:** Laborleiterin (Überblick, Projekt-Management)
 - **Umgebung:** Windows 11, Firefox, internes Labor (nicht reguliert)
 - **Probentypen:** Biologische Proben (Gewebe, Zelllysat, Plasma etc.), keine klinischen Patientenproben
 
@@ -35,7 +38,7 @@ Ein leichtgewichtiges, web-basiertes Laboratory Information Management System f�
 ## 2. Workflow-Übersicht (End-to-End)
 
 ```
- KOLLABORATION                PROBENEINGANG              LAGERUNG
+ Projekt                PROBENEINGANG              LAGERUNG
 ┌─────────────┐    ┌──────────────────────────┐    ┌──────────────┐
 │ Vorgespräch │    │ Kunde sendet ausgefülltes │    │ Originalprobe│
 │ mit Kunde   │───→│ Excel-Template + Proben   │───→│ bei -80°C    │
@@ -87,12 +90,37 @@ Ein leichtgewichtiges, web-basiertes Laboratory Information Management System f�
 
 ## 3. Daten-Hierarchie
 
+### 3.1 Parties (Stammdaten — wer liefert Proben?)
+
+Die stabile Achse ist die **ResearchGroup** (Arbeitsgruppe / Firma mit ihrem PI). Projekte laufen oft über Jahre; Personen innerhalb einer Gruppe (Postdocs, Doktoranden) wechseln häufiger. Für interne Messungen wird das eigene Lab ebenfalls als ResearchGroup modelliert.
+
 ```
-Collaboration (langfristig, mit Kunde/Forschungsgruppe)
-│  Name, Institution, Kontaktperson, vereinbarte Messungen
+Institution (optional, Kontext)
+│  Name, Adresse — z.B. "Universität Heidelberg", "Pharma GmbH"
 │
-├── SampleIntake (Probeneingang / Probenlieferung)
-│   │  Datum, importiertes Excel (archiviert), Anmerkungen
+└── ResearchGroup (stabile Achse)
+    │  Name, PI (FK → Person), Institution (optional)
+    │  Beispiel: "AG Müller", "Labor Schmidt"
+    │
+    └── Person (wechselt häufiger)
+        │  Vorname, Nachname, E-Mail, Rolle (PI/Postdoc/PhD/Techniker)
+        │  research_group (FK → ResearchGroup)
+```
+
+**Regeln:**
+- Jede Person gehört zu genau einer ResearchGroup (1:N). Gruppen-Wechsel ⇒ neue Person-Anlage, alte bleibt historisch erhalten.
+- Der PI einer ResearchGroup ist eine Person dieser Gruppe (Selbstreferenz via `research_group.pi`).
+- Eine Institution kann optional mehrere ResearchGroups haben (reine Kontextinformation, keine harte Abhängigkeit).
+
+### 3.2 Projekte & Probeneingänge
+
+```
+Project (Messvereinbarung, intern oder extern)
+│  Name, responsible_pi (FK → Person), vereinbarter Umfang, Zeitraum, Status
+│
+├── SampleIntake (konkrete Probenlieferung)
+│   │  Datum, submitter (FK → Person, wer die Lieferung gemacht hat)
+│   │  importiertes Excel (archiviert), Anmerkungen
 │   │
 │   └── OriginalSample (1:n)
 │       │  Kunden-Label (deren Beschriftung), LIMS-ID (unsere, auto)
@@ -112,30 +140,48 @@ Collaboration (langfristig, mit Kunde/Forschungsgruppe)
 │             LIMS-ID, Status, Lagerort (-20°C)
 ```
 
+**Rollen-Unterscheidung pro Projekt:**
+- `Project.responsible_pi` — langfristig zuständig, meist der PI der liefernden Gruppe. Stabil über die Projekt-Laufzeit.
+- `SampleIntake.submitter` — wer diese konkrete Lieferung gemacht hat. Kann bei Projekt-Laufzeit von 2 Jahren mehrmals wechseln (z.B. Postdoc macht Lieferung 1, Doktorand macht Lieferung 2).
+
 **Schlüsselregel:** Jeder Extract hat immer eine direkte Referenz zur Originalprobe (`original_sample`), auch bei Derivaten. Zusätzlich hat ein Derivat eine Referenz zum Eltern-Extrakt (`parent_extract`). So kann von jedem Punkt im Baum sofort zur Originalprobe navigiert werden.
 
 ---
 
 ## 4. Module & Features
 
-### 4.1 Modul: Kollaboration & Probeneingang
+### 4.1 Modul: Parties, Projekte & Probeneingang
 
-**Zweck:** Verwaltung von Kollaborationspartnern, Probenlieferungen und der initialen Probenregistrierung.
+**Zweck:** Verwaltung von Stammdaten (Institutionen, Forschungsgruppen, Personen), Projekten (Messvereinbarungen), Probenlieferungen und der initialen Probenregistrierung.
 
-#### Collaboration
+**Apps:** `parties`, `projects`, `samples` (siehe Constitution, Section "Modularität").
+
+#### Parties (parties-App)
 
 | Feature | Beschreibung | Priorität |
 |---|---|---|
-| Kollaboration anlegen | Name, Institution, Kontaktperson, E-Mail, vereinbarte Messungen | v1 |
-| Übersicht | Liste aller Kollaborationen mit Status (aktiv, abgeschlossen) | v1 |
+| Institution anlegen | Name, Adresse (Freitext), optionale Web-URL | v1 |
+| ResearchGroup anlegen | Name, Institution (FK, optional), PI (FK auf Person, nach erster Person anlegbar) | v1 |
+| Person anlegen | Vorname, Nachname, E-Mail, Rolle, ResearchGroup (FK) | v1 |
+| Internes Lab als ResearchGroup | Seed-Data beim ersten Start; eigenes Personal als Personen darin | v1 |
+| Personen-Suche | Nach Name, E-Mail, ResearchGroup | v1 |
+| Aktive Mitglieder einer Gruppe | "Wer arbeitet gerade in AG Müller?" | v1 |
+
+#### Project (projects-App)
+
+| Feature | Beschreibung | Priorität |
+|---|---|---|
+| Projekt anlegen | Name, responsible_pi (FK → Person), vereinbarter Umfang (n_samples, Methoden), Zeitraum, Status | v1 |
+| Übersicht | Liste aller Projekte mit Status (planned, active, completed, archived) | v1 |
 | Fortschritts-Tracking | "Von 50 Proben sind 32 extrahiert, 18 stehen aus" — automatisch berechnet | v1 |
+| Interne vs. externe Projekte | Unterscheidung über ResearchGroup (internes Lab vs. externe Gruppe) | v1 |
 | Dokument-Ablage | Vereinbarungen, Korrespondenz als Dateien anhängen | Später |
 
 #### SampleIntake (Probeneingang)
 
 | Feature | Beschreibung | Priorität |
 |---|---|---|
-| Probeneingang erstellen | Datum, Kollaboration zuordnen, Anmerkungen | v1 |
+| Probeneingang erstellen | Datum, Projekt zuordnen, Anmerkungen | v1 |
 | Excel-Import | Template hochladen → Preview → Validierung → Proben anlegen | v1 |
 | Import-Validierung | Fehlende Pflichtfelder, Duplikat-Kunden-IDs, Format-Checks | v1 |
 | Excel-Archivierung | Original-Datei wird gespeichert als Beleg | v1 |
@@ -160,7 +206,7 @@ Collaboration (langfristig, mit Kunde/Forschungsgruppe)
 | LIMS-ID-Format | Konfigurierbares Prefix + Sequenz (z.B. S-2025-00001) | v1 |
 | Status-Tracking | State Machine (siehe Abschnitt 5) | v1 |
 | Proben-Detail | Alle Infos, alle Extrakte, vollständige Historie | v1 |
-| Suche | Nach Kunden-Label, LIMS-ID, Kollaboration, Matrix, Status | v1 |
+| Suche | Nach Kunden-Label, LIMS-ID, Projekt, Matrix, Status | v1 |
 | Lagerort-Zuordnung | Position im -80°C Freezer (Freezer → Schublade → Rack → Position) | v1 (simpel) |
 | Freeze-Thaw-Zähler | Wie oft wurde die Probe aufgetaut? Automatisch bei Status-Wechsel. | v1 |
 
@@ -250,7 +296,7 @@ Collaboration (langfristig, mit Kunde/Forschungsgruppe)
 |---|---|---|
 | Zusammenführung | Ergebnisse aus mehreren ExtractionBatches/MeasurementRuns aggregieren | v1 |
 | Fortschritt anzeigen | "Studie Weber: 32/50 Proben gemessen, 18 ausstehend" | v1 |
-| Zusammenfassungs-Export | Gesamtergebnis über alle Batches einer Kollaboration als Excel | v1 |
+| Zusammenfassungs-Export | Gesamtergebnis über alle Batches einer Projekt als Excel | v1 |
 | Einzel- vs. Gesamtauswertung | Batches können einzeln ausgewertet werden und am Ende zusammengefügt | v1 |
 
 ---
@@ -287,7 +333,7 @@ Collaboration (langfristig, mit Kunde/Forschungsgruppe)
 | User-Accounts | Django Auth: Username, Passwort, Rolle | v1 |
 | Rollen | Admin, Laborant, Viewer (read-only) | v1 |
 | Audit Trail | Wer hat wann was geändert (django-fsm-log für Transitions) | v1 |
-| Globale Suche | Proben, Extrakte, Batches, Kollaborationen durchsuchbar | v1 |
+| Globale Suche | Proben, Extrakte, Batches, Projekten durchsuchbar | v1 |
 | Dashboard | Übersicht: offene Batches, anstehende Messungen, Fortschritt pro Studie | Später |
 
 ---
@@ -306,7 +352,7 @@ REGISTERED → STORED_80C → IN_EXTRACTION ──┘
                 │
                 ▼
              DEPLETED (aufgebraucht)
-             
+
 Jeder State → ON_HOLD (Investigation) möglich
 Jeder State → CANCELLED (Terminal) möglich
 ```
@@ -389,10 +435,15 @@ CREATED → RUNNING → ACQUIRED → DATA_UPLOADED → QUANTIFIED → REPORTED
 ### 6.1 Kern-Entities
 
 ```
-Collaboration ──1:n──→ SampleIntake ──1:n──→ OriginalSample
-                                                    │
-                                               1:n  │  (eine Probe → viele Extrakte)
-                                                    ▼
+Institution ──1:n──→ ResearchGroup ──1:n──→ Person
+                           │  (PI-Referenz: ResearchGroup.pi → Person)
+                           │
+                           └── responsible_pi ─┐
+                                               ▼
+                                            Project ──1:n──→ SampleIntake ──1:n──→ OriginalSample
+                                                                    │                      │
+                                                           submitter (FK → Person)    1:n  │
+                                                                                           ▼
 ExtractionProtocol ←── ExtractionBatch ──n:m──→ OriginalSample
         │                     │
         │                     ├──1:1──→ MasterMixPreparation ──1:n──→ PrepComponent
@@ -403,7 +454,7 @@ ExtractionProtocol ←── ExtractionBatch ──n:m──→ OriginalSample
               └──1:n──→ TemplateComponent   │
                             │               │
                     InternalStandard ←──────┘ (über PrepComponent)
-                    
+
 MeasurementRun ──→ ExtractionBatch
       │
       ├──1:n──→ PlateWell ──→ Extract
@@ -488,21 +539,21 @@ Was im standalone Modus manuell konfiguriert werden muss, weiß das LIMS bereits
 | Interaktive Inseln | Alpine.js für Freezer-Browser, Plate-Map, Batch-Builder |
 | Print-Layouts | CSS `@media print` für alle Bench-Dokumente |
 | Responsive | Muss auf Standard-Bildschirm (1920×1080) gut aussehen, kein Mobile nötig |
-| Schnelle Navigation | Von jeder Probe in max. 2 Klicks zu: Extrakt-Liste, Batch-Info, Kollaboration |
+| Schnelle Navigation | Von jeder Probe in max. 2 Klicks zu: Extrakt-Liste, Batch-Info, Projekt |
 
 ### 8.2 Schlüssel-Screens
 
-**Kollaborations-Übersicht:** Liste aller Kollaborationen mit Fortschrittsbalken ("32/50 Proben gemessen").
+**Projekt--Übersicht:** Liste aller Projekten mit Fortschrittsbalken ("32/50 Proben gemessen").
 
 **Probeneingang:** Excel hochladen → Preview-Tabelle → Validierung → Bestätigen. Einzelerfassung als Fallback.
 
 **Proben-Detail:** Alle Infos zur Originalprobe, Baum-Darstellung aller Extrakte und Derivate, Lagerort, vollständige Status-Historie.
 
-**Extraktions-Batch erstellen:** Protokoll wählen → verfügbare Proben filtern (nach Kollaboration, Status) → Subset auswählen → MasterMix konfigurieren (Template vorladen, anpassen) → Probenliste-Preview → Drucken/Bestätigen.
+**Extraktions-Batch erstellen:** Protokoll wählen → verfügbare Proben filtern (nach Projekt, Status) → Subset auswählen → MasterMix konfigurieren (Template vorladen, anpassen) → Probenliste-Preview → Drucken/Bestätigen.
 
 **Rückdokumentation:** Batch öffnen → Übersicht der Proben → "Extraktion abgeschlossen" (ein Klick). Optional: einzelne Proben als fehlgeschlagen markieren, Abweichungen notieren.
 
-**Probensuche:** Ein Suchfeld, findet Kunden-Labels, LIMS-IDs, Kollaborationen. Ergebnis zeigt Probe + aktuellen Status + Lagerort.
+**Probensuche:** Ein Suchfeld, findet Kunden-Labels, LIMS-IDs, Projekten. Ergebnis zeigt Probe + aktuellen Status + Lagerort.
 
 **Freezer-Browser (später):** Visuelle Drill-Down-Navigation: Freezer → Schublade → Rack → Position. Farbcodierung nach Probentyp oder Studie. Suchfunktion die Position highlightet.
 
@@ -537,7 +588,7 @@ Was im standalone Modus manuell konfiguriert werden muss, weiß das LIMS bereits
 ### Phase A — Fundament (erstes lauffähiges System)
 
 ```
-1. Collaboration + SampleIntake + OriginalSample CRUD
+1. Project + SampleIntake + OriginalSample CRUD
 2. Excel-Import mit Validierung und Preview
 3. State Machine für OriginalSample
 4. Extraktionsprotokoll + MasterMix-Template-Verwaltung
@@ -545,7 +596,7 @@ Was im standalone Modus manuell konfiguriert werden muss, weiß das LIMS bereits
 6. Druckbare Probenliste und Protokoll
 7. Rückdokumentation (Batch abschließen → Extracts erstellen)
 8. Extract-Modell mit Lagerort und Status
-9. Suche (Proben nach Kunden-Label, LIMS-ID, Kollaboration)
+9. Suche (Proben nach Kunden-Label, LIMS-ID, Projekt)
 10. Grundlegendes Storage (Freezer/Schublade/Rack/Position als Textfeld oder FK)
 ```
 
