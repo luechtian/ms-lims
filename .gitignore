@@ -44,6 +44,7 @@ desktop.ini
 .env.*
 !.env.example
 local_settings.py
+.claude/
 
 # ── Django (ab Phase 2) ──────────────────────────────
 db.sqlite3
