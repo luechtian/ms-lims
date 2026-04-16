@@ -15,29 +15,23 @@ dev = [
     "ruff>=0.15.10",
 ]
 
-# ── pytest Konfiguration ──────────────────────────────
+# ── pytest Configuration ──────────────────────────────
 [tool.pytest.ini_options]
-# Django-Settings für Tests (ab Phase 2 relevant)
-# DJANGO_SETTINGS_MODULE = "config.settings"
-# Wo pytest nach Tests sucht
+DJANGO_SETTINGS_MODULE = "config.settings"
 testpaths = ["tests"]
-# Ausgabe-Format: verbose
 addopts = "-v"
 
-# ── ruff Konfiguration ───────────────────────────────
+# ── ruff Configuration ───────────────────────────────
 [tool.ruff]
-# Maximale Zeilenlänge
 line-length = 88
-# Python-Version für Syntax-Checks
 target-version = "py313"
 
 [tool.ruff.lint]
-# Aktivierte Regel-Sets
 select = [
-    "E",    # pycodestyle errors (Stil-Fehler)
-    "F",    # pyflakes (logische Fehler, z.B. unbenutzte Imports)
-    "I",    # isort (Import-Sortierung)
-    "UP",   # pyupgrade (modernere Syntax vorschlagen)
-    "B",    # bugbear (häufige Bugs)
-    "SIM",  # simplify (vereinfachbare Konstrukte)
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "SIM",  # simplify
 ]
