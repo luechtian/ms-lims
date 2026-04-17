@@ -24,10 +24,10 @@ description: "Task list for Parties Master Data feature implementation"
 
 **Purpose**: Bring the `parties` app into existence and wire dev tooling.
 
-- [ ] T001 Scaffold the `parties` Django app: create `parties/__init__.py`, `parties/apps.py` (`PartiesConfig` with `default_auto_field = "django.db.models.BigAutoField"` and `verbose_name = "Parties"`), empty `parties/models.py`, `parties/admin.py`, `parties/api.py`, `parties/managers.py`, and `parties/migrations/__init__.py`. Create the directory `parties/fixtures/` (empty for now).
-- [ ] T002 Register the new app in `config/settings.py`: append `"parties.apps.PartiesConfig"` to `INSTALLED_APPS`.
-- [ ] T003 [P] Add `factory-boy>=3.3` to `[dependency-groups].dev` in `pyproject.toml`; run `uv sync --extra dev` and verify `factory` imports in a shell.
-- [ ] T004 [P] Create the test tree skeleton: `tests/parties/__init__.py` and an empty-but-importable `tests/parties/conftest.py` (can stay empty — pytest-django's `db` fixture is already enabled project-wide).
+- [x] T001 Scaffold the `parties` Django app: create `parties/__init__.py`, `parties/apps.py` (`PartiesConfig` with `default_auto_field = "django.db.models.BigAutoField"` and `verbose_name = "Parties"`), empty `parties/models.py`, `parties/admin.py`, `parties/api.py`, `parties/managers.py`, and `parties/migrations/__init__.py`. Create the directory `parties/fixtures/` (empty for now).
+- [x] T002 Register the new app in `config/settings.py`: append `"parties.apps.PartiesConfig"` to `INSTALLED_APPS`.
+- [x] T003 [P] Add `factory-boy>=3.3` to `[dependency-groups].dev` in `pyproject.toml`; run `uv sync --extra dev` and verify `factory` imports in a shell.
+- [x] T004 [P] Create the test tree skeleton: `tests/parties/__init__.py` and an empty-but-importable `tests/parties/conftest.py` (can stay empty — pytest-django's `db` fixture is already enabled project-wide).
 
 **Checkpoint**: `python manage.py check` passes; the app is registered but has no models yet.
 
