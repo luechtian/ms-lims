@@ -60,15 +60,15 @@ description: "Task list for Parties Master Data feature implementation"
 
 ### Tests for User Story 1 (write first, expect failures before T016/T017)
 
-- [ ] T013 [P] [US1] In `tests/parties/test_models.py`, add `test_pi_can_be_none_on_new_group` — creating a ResearchGroup without a PI succeeds and `group.pi is None`.
-- [ ] T014 [P] [US1] In `tests/parties/test_models.py`, add `test_pi_must_be_member_happy_path` — assigning a Person of the same group as PI passes `full_clean()` and saves.
-- [ ] T015 [P] [US1] In `tests/parties/test_models.py`, add `test_pi_must_be_member_rejects_other_group` — assigning a Person from a different ResearchGroup as PI raises `ValidationError` with key `pi`.
-- [ ] T016 [P] [US1] In `tests/parties/test_admin.py`, add `test_admin_onboarding_flow_roundtrip` — superuser client POSTs to admin add URLs in order (Institution → ResearchGroup → Person → set PI) and verifies a 302 redirect on each step plus the final group has the expected PI.
+- [x] T013 [P] [US1] In `tests/parties/test_models.py`, add `test_pi_can_be_none_on_new_group` — creating a ResearchGroup without a PI succeeds and `group.pi is None`.
+- [x] T014 [P] [US1] In `tests/parties/test_models.py`, add `test_pi_must_be_member_happy_path` — assigning a Person of the same group as PI passes `full_clean()` and saves.
+- [x] T015 [P] [US1] In `tests/parties/test_models.py`, add `test_pi_must_be_member_rejects_other_group` — assigning a Person from a different ResearchGroup as PI raises `ValidationError` with key `pi`.
+- [x] T016 [P] [US1] In `tests/parties/test_admin.py`, add `test_admin_onboarding_flow_roundtrip` — superuser client POSTs to admin add URLs in order (Institution → ResearchGroup → Person → set PI) and verifies a 302 redirect on each step plus the final group has the expected PI.
 
 ### Implementation for User Story 1
 
-- [ ] T017 [US1] Add `clean()` to `ResearchGroup` in `parties/models.py` enforcing the PI-must-be-member invariant (research R5): raise `ValidationError({"pi": "PI must be a member of this ResearchGroup."})` when `self.pi_id is not None and self.pi.research_group_id != self.pk`.
-- [ ] T018 [US1] In `parties/admin.py`, polish `InstitutionAdmin.list_display = ("name", "website", "active")`, `ResearchGroupAdmin.list_display = ("name", "institution", "pi", "active")`, `PersonAdmin.list_display = ("last_name", "first_name", "email", "research_group", "active")`. Ensure `ResearchGroupAdmin` surfaces the PI-must-be-member `ValidationError` as a field-level form error (Django's default `ModelForm` already does this — verify in T016).
+- [x] T017 [US1] Add `clean()` to `ResearchGroup` in `parties/models.py` enforcing the PI-must-be-member invariant (research R5): raise `ValidationError({"pi": "PI must be a member of this ResearchGroup."})` when `self.pi_id is not None and self.pi.research_group_id != self.pk`.
+- [x] T018 [US1] In `parties/admin.py`, polish `InstitutionAdmin.list_display = ("name", "website", "active")`, `ResearchGroupAdmin.list_display = ("name", "institution", "pi", "active")`, `PersonAdmin.list_display = ("last_name", "first_name", "email", "research_group", "active")`. Ensure `ResearchGroupAdmin` surfaces the PI-must-be-member `ValidationError` as a field-level form error (Django's default `ModelForm` already does this — verify in T016).
 
 **Checkpoint**: `pytest tests/parties/ -k "US1 or pi_must"` green. Manual onboarding flow works end-to-end in admin.
 

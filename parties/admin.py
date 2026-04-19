@@ -5,7 +5,7 @@ from parties.models import Institution, Person, ResearchGroup
 
 @admin.register(Institution)
 class InstitutionAdmin(admin.ModelAdmin):
-    list_display = ("name", "active")
+    list_display = ("name", "website", "active")
 
 
 @admin.register(ResearchGroup)

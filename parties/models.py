@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.db.models.functions import Lower
@@ -19,7 +20,7 @@ class Institution(models.Model):
             models.UniqueConstraint(Lower("name"), name="uniq_institution_name_ci"),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -61,11 +62,16 @@ class ResearchGroup(models.Model):
             ),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def active_members(self):
+    def active_members(self) -> "PartyQuerySet":
         return self.persons.active()
+
+    def clean(self):
+        super().clean()
+        if self.pi_id is not None and self.pi.research_group_id != self.pk:
+            raise ValidationError({"pi": "PI must be a member of this ResearchGroup."})
 
 
 class Person(models.Model):
@@ -88,9 +94,9 @@ class Person(models.Model):
             models.Index(fields=["email"]),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.first_name} {self.last_name}"
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}"
