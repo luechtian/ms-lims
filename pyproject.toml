@@ -14,6 +14,7 @@ dev = [
     "pytest-django>=4.12.0",
     "ruff>=0.15.10",
     "factory-boy>=3.3.3",
+    "ipython>=9.12.0",
 ]
 
 # ── pytest Configuration ──────────────────────────────
