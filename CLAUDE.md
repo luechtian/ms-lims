@@ -1,4 +1,4 @@
-﻿# ms-lims Development Guidelines
+# ms-lims Development Guidelines
 
 Auto-generated from all feature plans. Last updated: 2026-04-16
 
@@ -55,3 +55,8 @@ python manage.py runserver           # admin on :8000
 
 Other apps reach parties ONLY via `parties/api.py`. Never import from `parties.models` in another app. See `specs/001-parties-master-data/contracts/parties-api.md` for the canonical public interface.
 <!-- MANUAL ADDITIONS END -->
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
