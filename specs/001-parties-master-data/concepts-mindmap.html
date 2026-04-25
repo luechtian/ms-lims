@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>001 Parties — Konzept-Karte</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { height: 100vh; font-family: system-ui, sans-serif; background: #ffffff; }
+  .markmap { width: 100%; height: 100vh; }
+  .markmap-node text { fill: #1a1a2e !important; }
+  .markmap-node circle { stroke: #4a90d9; }
+  body { color: #1a1a2e; }
+</style>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/markmap-autoloader@0.16"></script>
+<div class="markmap">
+<script type="text/template">
+---
+markmap:
+  colorFreezeLevel: 2
+  initialExpandLevel: 3
+  maxWidth: 280
+  zoom: true
+  pan: true
+---
+
+# Django\nKonzepte
+
+## 1 · Projekt-Setup
+### AppConfig
+- `name` = welches Package hält Models/Migrations
+- `default_auto_field = BigAutoField`
+- `verbose_name` für Admin-Anzeige
+- **Datei**: `parties/apps.py`
+
+### INSTALLED_APPS
+- Kurze Form → leerer Auto-AppConfig (verliert `ready()`)
+- Explizit: `"parties.apps.PartiesConfig"` → lädt deine Config
+- **Datei**: `config/settings.py`
+
+### pyproject.toml / uv
+- `[dependency-groups].dev` = PEP 735, dev-only
+- `uv add --group dev factory-boy`
+- `uv sync` holt alle Gruppen
+
+### conftest.py
+- pytest sucht Fixtures von der Testdatei aufwärts
+- Je höher, desto breiter sichtbar
+- **Datei**: `tests/parties/conftest.py`
+
+## 2 · ORM-Kern
+### Landkarte
+- `Model` ↔ DB-Tabelle
+- `Instance` ↔ Zeile
+- `Manager` ↔ tabellenweiter Zugriff
+- `QuerySet` ↔ lazy SQL
+- `Migration` ↔ Schema-Sync
+
+### Field-Typen
+- `CharField(max_length=N)` — kurze Strings
+- `TextField` — lange Strings
+- `URLField` — URLs mit Format-Validator
+- `BooleanField` — True/False
+- `EmailField` — Email-Format in `full_clean()`
+
+### blank= vs null=
+- `blank=True` → leeres Formularfeld OK (Validierung)
+- `null=True` → NULL in DB OK
+- String-Felder: `blank=True, default=""` statt `null=True`
+
+### class Meta
+- Innere Klasse, keine Spalten
+- `ordering = ["name"]` → QuerySets immer sortiert
+- `constraints`, `indexes`, `app_label`
+
+### __str__
+- Für Admin-Dropdowns, Templates, `print()`
+- Kein DB-Query drin → sonst N+1
+
+### @property
+- Kein Klammern beim Aufruf: `person.full_name`
+- Keine DB-Spalte → nicht filterbar mit `.filter(...)`
+
+## 3 · Datenbank
+### db_index=True
+- B-Tree-Index auf einer Spalte
+- Beschleunigt `WHERE` / `ORDER BY` / Joins
+- Schreib-Overhead + Disk-Kosten
+- Nur bei häufig genutzten Spalten
+
+### Meta.indexes (composite)
+- `Index(fields=["last_name", "first_name"])`
+- Präfix-Matching: hilft auch reinen `last_name`-Queries
+- Vs. `db_index=True` = immer single-column
+
+### UniqueConstraint(Lower(...))
+- Functional Unique Index
+- `"Max Planck"` und `"max planck"` kollidieren
+- In `Meta.constraints`
+
+### Partial Constraint + Q
+- `condition=Q(active=True)` → nur für passende Zeilen
+- Zwei Constraints nötig wegen SQL: `NULL != NULL`
+
+## 4 · Relations
+### ForeignKey + on_delete
+- `PROTECT` → wirft Fehler (Projekt-Standard)
+- `SET_NULL` → setzt FK auf NULL
+- `CASCADE` → löscht Kind mit
+- **Geschäftsregel**, kein technisches Detail
+
+### related_name / "+"
+- `related_name="persons"` → `group.persons.all()`
+- `related_name="+"` → kein Reverse-Accessor
+
+### String-Reference
+- `ForeignKey("Person", ...)` löst Namen erst beim App-Start auf
+- Verhindert `NameError` bei forward references
+
+### Zirkuläre FK
+- Python load-time: String-Ref löst forward-reference auf
+- Migration-Generation: Django bricht Zyklus via `AddField`-Step
+- Beide Zeitlinien unabhängig
+
+## 5 · Timestamps
+### auto_now_add
+- Einmalig beim INSERT gesetzt
+- Für `created_at`
+
+### auto_now
+- Bei **jedem** `.save()` gesetzt
+- **Nicht** bei `QuerySet.update(...)`
+- Für `updated_at`
+
+## 6 · Managers & QuerySets
+### QuerySet-Subclass
+- Methoden auf QuerySet definieren (nicht Manager)
+- Ermöglicht Chaining: `.active().filter(name="X")`
+- `as_manager()` erzeugt Manager daraus
+- **Datei**: `parties/managers.py`
+
+### .active() DSL
+- Statt `filter(active=True)` überall verstreut
+- Single Source of Truth
+- Grep-bar, lesbar wie Domänensprache
+
+### Reverse-Accessor Chain
+- `self.persons` = RelatedManager (alle Persons dieser Gruppe)
+- `self.persons.active()` geht, weil `PartyQuerySet.as_manager()` gesetzt
+
+## 7 · Migrations
+### makemigrations
+- Liest `models.py`, vergleicht mit Migration-Chain
+- Schreibt `0001_initial.py` (oder `000N_...`)
+- Jede Model-Änderung + generiertes File im gleichen Commit
+
+### migrate
+- Schaut in `django_migrations`-Tabelle
+- Wendet fehlende Migrations an
+
+### dependencies DAG
+- `dependencies = [("parties", "0001_initial")]`
+- Bestimmt Reihenfolge beim Einlesen
+
+## 8 · Testing
+### DjangoModelFactory
+- Basis: `class InstitutionFactory(DjangoModelFactory)`
+- Ruft intern `Institution.objects.create(...)` auf
+- Schreibt in Test-DB
+- **Datei**: `tests/parties/factories.py`
+
+### SubFactory
+- Für FK-Felder: `research_group = SubFactory(ResearchGroupFactory)`
+- Erzeugt abhängige Instanz automatisch
+
+### factory.Sequence
+- `name = Sequence(lambda n: f"Group {n}")`
+- Pflicht bei `UniqueConstraint`-Feldern
+- Nicht-unique Felder → lieber `Faker`
+
+### admin_client
+- pytest-django Built-in
+- Erstellt Superuser + eingeloggten Client
+- Kein eigenes Setup nötig
+
+### Admin-POST-Pattern
+- URL: `/admin/<app>/<model>/add/`
+- `302` = Erfolg, `200` = Formularfehler
+- Formdata = Feldnamen + `"_save": "Save"`
+
+### refresh_from_db()
+- Nach externem Schreibvorgang: In-Memory-Instanz veraltet
+- `instance.refresh_from_db()` lädt frisch aus DB
+
+## 9 · Validation (US1)
+### Model.clean()
+- Cross-field Validation-Hook
+- Aufgerufen via `full_clean()` (Admin macht das automatisch)
+- `save()` ruft `clean()` **nicht** auf
+- Immer `super().clean()` zuerst
+
+### ValidationError als Dict
+- `raise ValidationError({"pi": "..."})`
+- Hängt Fehler ans spezifische Feld
+- Admin zeigt ihn direkt unter dem Feld
+
+### full_clean()
+- Ruft `clean_fields()` → `clean()` → `validate_unique()` auf
+- Im Admin automatisch, im Code manuell nötig
+</script>
+</div>
+</body>
+</html>
