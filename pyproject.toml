@@ -27,6 +27,7 @@ addopts = "-v"
 [tool.ruff]
 line-length = 88
 target-version = "py313"
+extend-exclude = ["*/migrations/*.py"]
 
 [tool.ruff.lint]
 select = [
