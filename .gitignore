@@ -23,7 +23,7 @@ coverage.xml
 htmlcov/
 *.cover
 
-# ── Virtual Environment (wird von uv verwaltet) ─────
+# ── Virtual Environment (managed by uv) ─────────────
 .venv/
 
 # ── IDE ──────────────────────────────────────────────
@@ -39,13 +39,13 @@ htmlcov/
 Thumbs.db
 desktop.ini
 
-# ── Secrets & lokale Konfiguration ───────────────────
+# ── Secrets & local configuration ────────────────────
 .env
 .env.*
 !.env.example
 local_settings.py
 
-# ── Django (ab Phase 2) ──────────────────────────────
+# ── Django ───────────────────────────────────────────
 db.sqlite3
 db.sqlite3-shm
 db.sqlite3-wal

@@ -17,13 +17,13 @@ dev = [
     "ipython>=9.12.0",
 ]
 
-# ── pytest Configuration ──────────────────────────────
+# ── pytest configuration ──────────────────────────────
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 testpaths = ["tests"]
 addopts = "-v"
 
-# ── ruff Configuration ───────────────────────────────
+# ── ruff configuration ───────────────────────────────
 [tool.ruff]
 line-length = 88
 target-version = "py313"
