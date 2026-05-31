@@ -82,15 +82,15 @@ description: "Task list for Parties Master Data feature implementation"
 
 ### Tests for User Story 2
 
-- [ ] T019 [P] [US2] In `tests/parties/test_seed.py`, add `test_internal_lab_fixture_is_valid_json` — open `parties/fixtures/internal_lab.json`, parse it, assert top-level is a non-empty list.
-- [ ] T020 [P] [US2] In `tests/parties/test_seed.py`, add `test_loaddata_creates_internal_lab` — on an empty DB, call `call_command("loaddata", "internal_lab", app_label="parties")` and assert exactly one ResearchGroup named "Internes Lab" with at least one Person and `pi_id is not None`.
-- [ ] T021 [P] [US2] In `tests/parties/test_seed.py`, add `test_loaddata_is_idempotent` — run `loaddata` twice in sequence; assert the Person and ResearchGroup counts are unchanged after the second run (verifies FR-017 + SC-008).
-- [ ] T022 [P] [US2] In `tests/parties/test_seed.py`, add `test_migrate_seeds_internal_lab` (uses pytest-django's `django_db(transaction=True)` or a fresh-DB fixture) — after `migrate` completes, the internal-lab group is present.
+- [x] T019 [P] [US2] In `tests/parties/test_seed.py`, add `test_internal_lab_fixture_is_valid_json` — open `parties/fixtures/internal_lab.json`, parse it, assert top-level is a non-empty list.
+- [x] T020 [P] [US2] In `tests/parties/test_seed.py`, add `test_loaddata_creates_internal_lab` — on an empty DB, call `call_command("loaddata", "internal_lab", app_label="parties")` and assert exactly one ResearchGroup named "Internes Lab" with at least one Person and `pi_id is not None`.
+- [x] T021 [P] [US2] In `tests/parties/test_seed.py`, add `test_loaddata_is_idempotent` — run `loaddata` twice in sequence; assert the Person and ResearchGroup counts are unchanged after the second run (verifies FR-017 + SC-008).
+- [x] T022 [P] [US2] In `tests/parties/test_seed.py`, add `test_migrate_seeds_internal_lab` (uses pytest-django's `django_db(transaction=True)` or a fresh-DB fixture) — after `migrate` completes, the internal-lab group is present.
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] Create `parties/fixtures/internal_lab.json` per data-model.md §Fixture shape. Two-phase layout: ResearchGroup pk=1 with `pi=null`, then Person pk=1 with `research_group=1`, then ResearchGroup pk=1 again with `pi=1`. Use `REPLACE_ME` placeholders for personal names / emails so operators know to edit before first migrate.
-- [ ] T024 [US2] Create `parties/migrations/0002_seed_internal_lab.py` — a hand-written data migration with a single `RunPython` operation that imports `django.core.management.call_command` and calls `call_command("loaddata", "internal_lab", app_label="parties")`. Reverse op: `migrations.RunPython.noop`. Depends on `0001_initial`.
+- [x] T023 [US2] Create `parties/fixtures/internal_lab.json` per data-model.md §Fixture shape. Two-phase layout: ResearchGroup pk=1 with `pi=null`, then Person pk=1 with `research_group=1`, then ResearchGroup pk=1 again with `pi=1`. Use `REPLACE_ME` placeholders for personal names / emails so operators know to edit before first migrate.
+- [x] T024 [US2] Create `parties/migrations/0002_seed_internal_lab.py` — a hand-written data migration with a single `RunPython` operation that imports `django.core.management.call_command` and calls `call_command("loaddata", "internal_lab", app_label="parties")`. Reverse op: `migrations.RunPython.noop`. Depends on `0001_initial`.
 
 **Checkpoint**: Drop `db.sqlite3`; run `python manage.py migrate`; confirm internal lab appears in admin. All US2 tests pass.
 
@@ -104,7 +104,7 @@ description: "Task list for Parties Master Data feature implementation"
 
 ### Tests for User Story 3
 
-- [ ] T025 [P] [US3] In `tests/parties/test_managers.py`, add `test_party_queryset_active_filters_inactive` and `test_party_queryset_inactive_is_complement` across Institution, ResearchGroup, Person.
+- [x] T025 [P] [US3] In `tests/parties/test_managers.py`, add `test_party_queryset_active_filters_inactive` and `test_party_queryset_inactive_is_complement` across Institution, ResearchGroup, Person.
 - [ ] T026 [P] [US3] In `tests/parties/test_models.py`, add `test_delete_group_with_active_persons_raises_protected_error` — uses `pytest.raises(ProtectedError)`.
 - [ ] T027 [P] [US3] In `tests/parties/test_models.py`, add `test_delete_group_with_only_inactive_persons_succeeds`.
 - [ ] T027b [P] [US3] In `tests/parties/test_models.py`, add `test_deactivation_preserves_person_and_references` — create an Institution, ResearchGroup, and Person via factories; assign the Person as the group's PI; toggle `person.active=False` and `group.save()`. Assert: (a) the Person row still exists (`Person.objects.filter(pk=person.pk).exists()`), (b) the ResearchGroup's `pi_id` still references that Person (no auto-clear), (c) the Person appears in `Person.objects.inactive()` and is absent from `Person.objects.active()`, (d) the group's reverse relation `self.persons` still yields the Person when the queryset is unfiltered. Closes FR-014 + SC-003.

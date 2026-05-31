@@ -1,0 +1,39 @@
+[
+  {
+    "model": "parties.researchgroup",
+    "pk": 1,
+    "fields": {
+      "name": "Internes Lab",
+      "institution": null,
+      "pi": null,
+      "active": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "parties.person",
+    "pk": 1,
+    "fields": {
+      "first_name": "REPLACE_ME",
+      "last_name": "REPLACE_ME",
+      "email": "pi@example.org",
+      "research_group": 1,
+      "active": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "parties.researchgroup",
+    "pk": 1,
+    "fields": {
+      "name": "Internes Lab",
+      "institution": null,
+      "pi": 1,
+      "active": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  }
+]
